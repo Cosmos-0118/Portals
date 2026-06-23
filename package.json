@@ -1,0 +1,11 @@
+{
+  "name": "portals",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^1.4.0"
+  }
+}
