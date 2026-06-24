@@ -1,15 +1,21 @@
 import { constructUrl, findActiveProject } from '../utils/url.js';
+import { openSideBySide } from '../utils/window.js';
 
 chrome.commands.onCommand.addListener(async (command) => {
-  // Commands are "switch_env_1", "switch_env_2", "switch_env_3"
+  // Commands are "switch_env_1/2/3" and "split_env_1/2/3"
   const envIndexMap = {
-    "switch_env_1": 0,
-    "switch_env_2": 1,
-    "switch_env_3": 2
+    "switch_env_1": { index: 0, split: false },
+    "switch_env_2": { index: 1, split: false },
+    "switch_env_3": { index: 2, split: false },
+    "split_env_1": { index: 0, split: true },
+    "split_env_2": { index: 1, split: true },
+    "split_env_3": { index: 2, split: true }
   };
 
-  const targetIndex = envIndexMap[command];
-  if (targetIndex === undefined) return;
+  const commandConfig = envIndexMap[command];
+  if (!commandConfig) return;
+  const targetIndex = commandConfig.index;
+  const isSplit = commandConfig.split;
 
   const result = await chrome.storage.sync.get('portalsConfig');
   const state = result.portalsConfig;
@@ -49,7 +55,14 @@ chrome.commands.onCommand.addListener(async (command) => {
     
     if (!newUrl) return;
 
-    if (state.openInNewTab) {
+    if (isSplit) {
+      await openSideBySide(currentTab.windowId, newUrl);
+    } else if (state.openInNewTab || state.openSideBySide) {
+      // Fallback for older configs: openInNewTab if state wasn't migrated
+      // If the popup says openSideBySide, a normal switch also does a split?
+      // Wait, let's keep the split logic triggered here only via shortcut,
+      // and if the user wants popup switch to trigger split, they'll use openSideBySide.
+      // We will handle the popup click split in popup.js, but just to be safe:
       chrome.tabs.create({ url: newUrl });
     } else {
       chrome.tabs.update(currentTab.id, { url: newUrl });

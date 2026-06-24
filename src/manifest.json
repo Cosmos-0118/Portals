@@ -16,7 +16,8 @@
   "permissions": [
     "storage",
     "tabs",
-    "activeTab"
+    "activeTab",
+    "system.display"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -46,6 +47,15 @@
         "mac": "MacCtrl+Shift+3"
       },
       "description": "Switch to Environment 3 (e.g., Production)"
+    },
+    "split_env_1": {
+      "description": "Split view Environment 1 (e.g., Local)"
+    },
+    "split_env_2": {
+      "description": "Split view Environment 2 (e.g., Staging)"
+    },
+    "split_env_3": {
+      "description": "Split view Environment 3 (e.g., Production)"
     }
   }
 }

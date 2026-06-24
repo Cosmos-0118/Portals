@@ -3,6 +3,7 @@
    ═══════════════════════════════════════════════ */
 
 import { constructUrl, findActiveProject, getCleanDomain } from '../utils/url.js';
+import { openSideBySide } from '../utils/window.js';
 
 const DEFAULT_CONFIG = {
   projects: [
@@ -16,7 +17,7 @@ const DEFAULT_CONFIG = {
       ]
     }
   ],
-  openInNewTab: false,
+  openSideBySide: false,
   activeProjectId: 'proj_default'
 };
 
@@ -70,8 +71,8 @@ function autoDetectProject() {
    ════════════════════════════════════════════ */
 function renderMainView() {
   // Toggle
-  const toggleEl = document.getElementById('toggle-newtab');
-  toggleEl.classList.toggle('active', state.openInNewTab);
+  const toggleEl = document.getElementById('toggle-sidebyside');
+  toggleEl.classList.toggle('active', state.openSideBySide || state.openInNewTab);
 
   // Profile dropdown
   renderProfileDropdown();
@@ -290,14 +291,17 @@ function createEnvRow(proj, env, eIdx, bodyEl) {
 /* ════════════════════════════════════════════
    Switching logic
    ════════════════════════════════════════════ */
-function switchEnv(targetDomain) {
+async function switchEnv(targetDomain) {
   if (!currentTabUrl) return;
 
   const newUrl = constructUrl(currentTabUrl.href, targetDomain);
   if (!newUrl) return;
 
-  if (state.openInNewTab) {
-    chrome.tabs.create({ url: newUrl });
+  if (state.openSideBySide || state.openInNewTab) {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs[0]) {
+      await openSideBySide(tabs[0].windowId, newUrl);
+    }
   } else {
     chrome.tabs.update({ url: newUrl });
   }
@@ -368,9 +372,10 @@ function bindGlobalListeners() {
     if (!e.target.closest('#profile-dropdown')) closeDropdown();
   });
 
-  // Toggle new-tab switch
-  document.getElementById('toggle-newtab').addEventListener('click', () => {
-    state.openInNewTab = !state.openInNewTab;
+  // Toggle side-by-side switch
+  document.getElementById('toggle-sidebyside').addEventListener('click', () => {
+    state.openSideBySide = !(state.openSideBySide || state.openInNewTab);
+    state.openInNewTab = false; // migrate old state
     save();
     renderMainView();
   });
