@@ -18,6 +18,7 @@ const DEFAULT_CONFIG = {
     }
   ],
   openSideBySide: false,
+  openInNewTab: false,
   activeProjectId: 'proj_default'
 };
 
@@ -70,9 +71,14 @@ function autoDetectProject() {
    MAIN VIEW
    ════════════════════════════════════════════ */
 function renderMainView() {
-  // Toggle
-  const toggleEl = document.getElementById('toggle-sidebyside');
-  toggleEl.classList.toggle('active', state.openSideBySide || state.openInNewTab);
+  // Toggles
+  const toggleSbS = document.getElementById('toggle-sidebyside');
+  toggleSbS.classList.toggle('active', state.openSideBySide);
+  
+  const toggleNewTab = document.getElementById('toggle-newtab');
+  if (toggleNewTab) {
+    toggleNewTab.classList.toggle('active', state.openInNewTab);
+  }
 
   // Profile dropdown
   renderProfileDropdown();
@@ -131,7 +137,7 @@ function renderEnvList() {
     const card = document.createElement('div');
     card.className = 'env-card' + (isCurrent ? ' current' : '');
 
-    const shortcutLabel = i < 3 ? `⌃⇧${i + 1}` : '';
+    const shortcutLabel = i < 3 ? `<kbd>⌃</kbd><kbd>⇧</kbd><kbd>${i + 1}</kbd>` : '';
 
     card.innerHTML = `
       <span class="env-dot"></span>
@@ -139,7 +145,7 @@ function renderEnvList() {
         <div class="env-info-name">${esc(env.name)}</div>
         <div class="env-info-domain">${esc(env.domain)}</div>
       </div>
-      ${shortcutLabel ? `<span class="env-kbd">${shortcutLabel}</span>` : ''}
+      ${shortcutLabel ? `<div class="env-kbd">${shortcutLabel}</div>` : ''}
     `;
 
     card.addEventListener('click', () => switchEnv(env.domain));
@@ -297,11 +303,13 @@ async function switchEnv(targetDomain) {
   const newUrl = constructUrl(currentTabUrl.href, targetDomain);
   if (!newUrl) return;
 
-  if (state.openSideBySide || state.openInNewTab) {
+  if (state.openSideBySide) {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tabs[0]) {
       await openSideBySide(tabs[0].windowId, newUrl);
     }
+  } else if (state.openInNewTab) {
+    chrome.tabs.create({ url: newUrl });
   } else {
     chrome.tabs.update({ url: newUrl });
   }
@@ -374,8 +382,16 @@ function bindGlobalListeners() {
 
   // Toggle side-by-side switch
   document.getElementById('toggle-sidebyside').addEventListener('click', () => {
-    state.openSideBySide = !(state.openSideBySide || state.openInNewTab);
-    state.openInNewTab = false; // migrate old state
+    state.openSideBySide = !state.openSideBySide;
+    if (state.openSideBySide) state.openInNewTab = false;
+    save();
+    renderMainView();
+  });
+
+  // Toggle new tab switch
+  document.getElementById('toggle-newtab').addEventListener('click', () => {
+    state.openInNewTab = !state.openInNewTab;
+    if (state.openInNewTab) state.openSideBySide = false;
     save();
     renderMainView();
   });
