@@ -1,50 +1,80 @@
 # Portals
 
-Portals is a sleek, modern Chrome extension for developers that allows you to seamlessly switch between Local, Staging, and Production environments with a single keyboard shortcut, completely preserving your current URL path and query parameters.
+Portals is a Chrome extension for switching between environments (Local, Staging, Production, or any custom set) while preserving the current page path, query string, and hash.
 
-## Features
+## What It Does
 
-- 🎨 **Beautiful UI**: A premium, glassmorphism-inspired dark mode interface.
-- ⌨️ **Keyboard Shortcuts**: Switch environments instantly using `Ctrl+Shift+1/2/3` (or `Cmd+Shift+1/2/3` on Mac).
-- 🔄 **Smart Switching**: Automatically detects which project you're currently in based on your active tab.
-- ⚙️ **No JSON Required**: Manage all your projects, environments, and domains directly within the extension's UI.
-- 🧪 **Side-by-Side Compare**: Optionally open environments in a new tab for easy side-by-side comparison.
+- Switches the active page to another environment with one click.
+- Preserves URL path/search/hash when changing hosts.
+- Supports multiple project profiles with custom environment lists.
+- Auto-detects the active profile from the current tab's host.
+- Opens targets in:
+  - a new tab (default),
+  - the current tab, or
+  - side-by-side windows.
 
-## Installation
+## Keyboard Shortcuts
 
-1. Open Google Chrome and navigate to `chrome://extensions/`.
-2. Enable **Developer mode** in the top right corner.
-3. Click **Load unpacked** and select the `src/` directory from this repository.
+Default extension commands:
+
+- `Ctrl+Shift+1`, `Ctrl+Shift+2`, `Ctrl+Shift+3` (Mac: `Control+Shift+1/2/3`) to switch to environment 1-3.
+- `split_env_1`, `split_env_2`, `split_env_3` commands are also available and can be bound from Chrome shortcuts.
+
+Inside the popup:
+
+- `S` opens Settings.
+- `Esc` returns to the main view / closes dropdowns.
+- `N` creates a new profile (in Settings view).
+- `1-9` quickly switches to that environment index in the selected profile.
+
+Configure extension command bindings at `chrome://extensions/shortcuts`.
+
+## Installation (Load Unpacked)
+
+1. Open `chrome://extensions/`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select the `src/` folder from this repository.
+
+## Usage
+
+1. Open the extension popup.
+2. Choose a profile (or create one in Settings).
+3. Click an environment card to switch.
+4. Choose your preferred behavior:
+   - **Open side-by-side** (creates a second window arranged next to current),
+   - **Open in new tab** (default), or
+   - disable both to replace the current tab.
 
 ## Development
 
-The project uses Vanilla HTML/CSS/JS for the extension itself to remain lightweight and fast, alongside modern Node.js tooling for asset generation and testing.
+The extension is built with vanilla HTML/CSS/JavaScript (Manifest V3) and uses Vitest for unit tests.
 
 ### Prerequisites
 
-- Node.js (v18+)
+- Node.js 18+
 
 ### Setup
-
-Install the required dependencies (Vitest):
 
 ```bash
 npm install
 ```
 
-### Scripts
+### Test
 
-- `npm run test`: Runs the Vitest suite to rigorously test the URL construction and edge-case logic.
+```bash
+npm run test
+```
 
 ## Project Structure
 
 ```text
-/src                # The core extension directory (load this in Chrome)
-  /assets/icons     # icons
-  /background       # Background service worker logic
-  /popup            # UI components (HTML, CSS, JS)
-  /utils            # Shared utility logic
-  manifest.json     # Chrome extension manifest
-/tests              # Vitest test files
-package.json        # Tooling dependencies
+src/
+  background/      # Service worker command handling
+  popup/           # Popup UI (HTML/CSS/JS)
+  utils/           # URL and window utility logic
+  manifest.json    # Chrome extension manifest
+tests/
+  url.test.js      # URL utility tests
+package.json
 ```
