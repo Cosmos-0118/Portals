@@ -18,7 +18,8 @@ const DEFAULT_CONFIG = {
     }
   ],
   openSideBySide: false,
-  openInNewTab: false,
+  openInNewTab: true,
+  configVersion: 2,
   activeProjectId: 'proj_default'
 };
 
@@ -33,6 +34,13 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
   const stored = await chrome.storage.sync.get('portalsConfig');
   state = stored.portalsConfig || structuredClone(DEFAULT_CONFIG);
+
+  // Migrate older configs that defaulted to in-place navigation.
+  if (!state.configVersion || state.configVersion < 2) {
+    state.openInNewTab = true;
+    state.configVersion = 2;
+    save();
+  }
 
   if (!state.activeProjectId && state.projects.length) {
     state.activeProjectId = state.projects[0].id;
@@ -303,15 +311,16 @@ async function switchEnv(targetDomain) {
   const newUrl = constructUrl(currentTabUrl.href, targetDomain);
   if (!newUrl) return;
 
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
   if (state.openSideBySide) {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tabs[0]) {
-      await openSideBySide(tabs[0].windowId, newUrl);
+    if (tab) {
+      await openSideBySide(tab.windowId, newUrl);
     }
-  } else if (state.openInNewTab) {
-    chrome.tabs.create({ url: newUrl });
-  } else {
-    chrome.tabs.update({ url: newUrl });
+  } else if (state.openInNewTab !== false) {
+    await chrome.tabs.create({ url: newUrl });
+  } else if (tab) {
+    await chrome.tabs.update(tab.id, { url: newUrl });
   }
 }
 

@@ -1,6 +1,20 @@
 import { constructUrl, findActiveProject } from '../utils/url.js';
 import { openSideBySide } from '../utils/window.js';
 
+async function getConfig() {
+  const result = await chrome.storage.sync.get('portalsConfig');
+  const state = result.portalsConfig;
+  if (!state) return null;
+
+  if (!state.configVersion || state.configVersion < 2) {
+    state.openInNewTab = true;
+    state.configVersion = 2;
+    await chrome.storage.sync.set({ portalsConfig: state });
+  }
+
+  return state;
+}
+
 chrome.commands.onCommand.addListener(async (command) => {
   // Commands are "switch_env_1/2/3" and "split_env_1/2/3"
   const envIndexMap = {
@@ -17,8 +31,7 @@ chrome.commands.onCommand.addListener(async (command) => {
   const targetIndex = commandConfig.index;
   const isSplit = commandConfig.split;
 
-  const result = await chrome.storage.sync.get('portalsConfig');
-  const state = result.portalsConfig;
+  const state = await getConfig();
   
   if (!state || !state.projects || state.projects.length === 0) return;
 
@@ -57,15 +70,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 
     if (isSplit) {
       await openSideBySide(currentTab.windowId, newUrl);
-    } else if (state.openInNewTab || state.openSideBySide) {
-      // Fallback for older configs: openInNewTab if state wasn't migrated
-      // If the popup says openSideBySide, a normal switch also does a split?
-      // Wait, let's keep the split logic triggered here only via shortcut,
-      // and if the user wants popup switch to trigger split, they'll use openSideBySide.
-      // We will handle the popup click split in popup.js, but just to be safe:
-      chrome.tabs.create({ url: newUrl });
+    } else if (state.openInNewTab !== false) {
+      await chrome.tabs.create({ url: newUrl });
     } else {
-      chrome.tabs.update(currentTab.id, { url: newUrl });
+      await chrome.tabs.update(currentTab.id, { url: newUrl });
     }
 
   } catch (err) {
