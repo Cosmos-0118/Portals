@@ -405,6 +405,15 @@ function bindGlobalListeners() {
     renderMainView();
   });
 
+  // Legal document links
+  document.querySelectorAll('.legal-link').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const doc = btn.dataset.doc;
+      const path = doc === 'privacy' ? 'legal/privacy.html' : 'legal/terms.html';
+      await chrome.tabs.create({ url: chrome.runtime.getURL(path) });
+    });
+  });
+
   // Keyboard shortcuts within popup
   document.addEventListener('keydown', (e) => {
     // "S" opens settings
